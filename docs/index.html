@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MagicMove — Move folders, leave symbolic links</title>
+  <style>
+    :root {
+      --bg: #111113;
+      --bg-card: #1a1a1f;
+      --bg-card-hover: #22222a;
+      --accent: #647dff;
+      --accent-hover: #8299ff;
+      --text: #e6e6e6;
+      --text-secondary: #969696;
+      --border: #2a2a30;
+      --success: #50be78;
+      --danger: #dc5050;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 24px 0;
+    }
+
+    nav .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    nav .links { display: flex; gap: 24px; }
+
+    nav .links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    nav .links a:hover { color: var(--text); }
+
+    /* Hero */
+    .hero {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 80px 24px 60px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { background: var(--bg-card-hover); }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* Screenshot placeholder */
+    .screenshot {
+      max-width: 720px;
+      margin: 0 auto 80px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      padding: 32px;
+      text-align: center;
+    }
+
+    .screenshot-mock {
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 20px 24px;
+      text-align: left;
+    }
+
+    .mock-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #333;
+    }
+
+    .mock-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .mock-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-left: 4px;
+    }
+
+    .mock-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #2a2a30;
+      margin-bottom: 8px;
+    }
+
+    .mock-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mock-path {
+      font-size: 0.85rem;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      color: var(--text);
+    }
+
+    .mock-arrow {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin: 0 2px;
+    }
+
+    .mock-dest {
+      font-size: 0.8rem;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      color: var(--text-secondary);
+    }
+
+    /* Features */
+    .features {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: #3a3a44;
+      background: var(--bg-card-hover);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* How it works */
+    .how-it-works {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .how-it-works h2 {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .step {
+      text-align: center;
+      padding: 24px;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .step h3 {
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Requirements */
+    .requirements {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+      text-align: center;
+    }
+
+    .requirements h2 {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+
+    .requirements p {
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .requirements code {
+      background: var(--bg-card);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+    }
+
+    /* Footer */
+    footer {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+      .hero { padding: 48px 24px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="logo" href="#">MagicMove</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="https://github.com/peppage/MagicMove">GitHub</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>MagicMove</h1>
+    <p>Move folders to another drive and leave behind a symbolic link. Applications keep working — they never know the folder moved.</p>
+    <div class="hero-buttons">
+      <a class="btn btn-primary" href="https://github.com/peppage/MagicMove/releases/latest">
+        <svg viewBox="0 0 16 16"><path d="M8 0a1 1 0 0 1 1 1v6.585l2.293-2.292a1 1 0 1 1 1.414 1.414l-4 4a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L7 7.585V1a1 1 0 0 1 1-1zM2 12a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1a1 1 0 0 1 1-1z"/></svg>
+        Download
+      </a>
+      <a class="btn btn-secondary" href="https://github.com/peppage/MagicMove">
+        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        View Source
+      </a>
+    </div>
+  </section>
+
+  <div class="screenshot">
+    <div class="screenshot-mock">
+      <div class="mock-header">
+        <div class="mock-dot" style="background:#ff5f57"></div>
+        <div class="mock-dot" style="background:#febc2e"></div>
+        <div class="mock-dot" style="background:#28c840"></div>
+        <span class="mock-title">MagicMove</span>
+      </div>
+      <div class="mock-row">
+        <div class="mock-status" style="background:#50be78"></div>
+        <span class="mock-path">C:\Games\CyberRPG</span>
+        <span class="mock-arrow">&rarr;</span>
+        <span class="mock-dest">D:\Storage\CyberRPG</span>
+      </div>
+      <div class="mock-row">
+        <div class="mock-status" style="background:#50be78"></div>
+        <span class="mock-path">C:\Projects\BigRepo</span>
+        <span class="mock-arrow">&rarr;</span>
+        <span class="mock-dest">E:\Projects\BigRepo</span>
+      </div>
+      <div class="mock-row">
+        <div class="mock-status" style="background:#dc5050"></div>
+        <span class="mock-path">C:\Apps\DevTools</span>
+        <span class="mock-arrow">&rarr;</span>
+        <span class="mock-dest">D:\Archive\DevTools</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="features" id="features">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(100,125,255,0.15); color:var(--accent);">&#128193;</div>
+      <h3>Move Anywhere</h3>
+      <p>Relocate folders to any drive or directory. The original path gets a symbolic link so everything keeps working.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(80,190,120,0.15); color:var(--success);">&#8634;</div>
+      <h3>One-Click Revert</h3>
+      <p>Changed your mind? Revert a move instantly — the symlink is removed and the folder returns to its original location.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(220,80,80,0.15); color:var(--danger);">&#128274;</div>
+      <h3>Admin Enforced</h3>
+      <p>Creating symbolic links requires administrator privileges. MagicMove requests elevation via UAC automatically.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(167,139,250,0.15); color:#a78bfa;">&#128190;</div>
+      <h3>Persistent Tracking</h3>
+      <p>All moved folders are remembered across sessions. Settings are stored in <code>%APPDATA%</code> so they survive reinstalls.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(251,191,36,0.15); color:#fbbf24;">&#9679;</div>
+      <h3>Health Status</h3>
+      <p>Each entry shows a live status indicator — green when the symlink is healthy, red when something needs attention.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(230,230,230,0.1); color:var(--text);">&#9889;</div>
+      <h3>Lightweight</h3>
+      <p>A single-purpose tool with no bloat. Built with WinForms on .NET — fast startup, tiny footprint.</p>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how-it-works">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Pick a Folder</h3>
+        <p>Select the folder you want to relocate and choose a destination.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Folder Moves</h3>
+        <p>The folder is moved to the new location on your target drive.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Symlink Created</h3>
+        <p>A symbolic link is placed at the original path pointing to the new location. Apps see no difference.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="requirements">
+    <h2>Requirements</h2>
+    <p>Windows 10 or later</p>
+    <p><a href="https://dotnet.microsoft.com/download/dotnet/9.0" style="color:var(--accent)">.NET 9.0 Runtime</a> (included in self-contained builds)</p>
+  </section>
+
+  <footer>
+    <p>MagicMove is open source under the MIT license. <a href="https://github.com/peppage/MagicMove">View on GitHub</a></p>
+  </footer>
+
+</body>
+</html>
